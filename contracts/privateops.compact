@@ -1,0 +1,26 @@
+pragma language_version >= 0.23;
+
+import CompactStandardLibrary;
+
+// Public ledger state.
+// These values are visible on the blockchain.
+export ledger lastActionAmount: Uint<64>;
+export ledger lastActionAuthorized: Boolean;
+
+// Private policy supplied by the user's local witness.
+// The policy limit never needs to be stored on the blockchain.
+witness getPolicyLimit(): Uint<64>;
+
+// PrivateOps Level 1:
+// Prove that an action amount is allowed by a private policy.
+//
+// The action amount and authorization result are deliberately disclosed.
+// The private policy limit remains private.
+export circuit authorizeAction(actionAmount: Uint<64>): [] {
+    const policyLimit = getPolicyLimit();
+
+    const authorized = actionAmount <= policyLimit;
+
+    lastActionAmount = disclose(actionAmount);
+    lastActionAuthorized = disclose(authorized);
+}
