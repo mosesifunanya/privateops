@@ -1,29 +1,25 @@
 # PrivateOps
 
-## Privacy Preserving Authorization and Verification for AI Agents
-
-PrivateOps is a privacy preserving authorization system built on Midnight. It allows AI agents and applications to prove that an action follows a private policy without exposing the policy itself.
-
 > Verify what AI agents are allowed to do, without exposing private rules.
 
-## Problem
+PrivateOps is a privacy preserving authorization and verification prototype built on Midnight. It demonstrates how an AI agent or application can prove that an action follows a private authorization policy without exposing the policy itself.
 
-AI agents are increasingly being trusted to perform actions involving sensitive information and valuable resources.
+## Contract Address
 
-Traditional authorization systems often require applications to reveal or store the rules used to make an authorization decision.
+| Network | Address |
+|---|---|
+| Preview | `e3836a466cf5ee97443fc970d36fddda4fff407707250c9778e723cbbc2d04de` |
+| Preprod | Not deployed |
 
-For example, an organization may have a private rule that an AI agent can approve expenses up to a certain limit.
+The Level 1 PrivateOps contract is deployed to Midnight Preview.
 
-The application should be able to prove that an action was authorized without publicly revealing that private limit.
+## What This Does
 
-## Solution
+PrivateOps addresses a simple authorization problem: an AI agent may need to perform a sensitive action, but the rule used to authorize that action may itself be private.
 
-PrivateOps uses Midnight's privacy preserving smart contract capabilities to separate:
+For Level 1, the project uses a private policy limit.
 
-1. Public authorization results
-2. Private authorization policies
-
-For example:
+Example:
 
 ```text
 Private Policy Limit: 500
@@ -31,9 +27,7 @@ Action Amount:        300
 Authorization Result: AUTHORIZED
 ```
 
-The action amount and authorization result can be disclosed while the policy limit remains private.
-
-If the action exceeds the private policy:
+If the requested amount exceeds the private policy:
 
 ```text
 Private Policy Limit: 500
@@ -41,121 +35,121 @@ Action Amount:        700
 Authorization Result: NOT AUTHORIZED
 ```
 
-The private policy itself does not need to be stored as public blockchain state.
+The policy limit is supplied as a private witness value. The contract deliberately discloses the action amount and authorization result while keeping the policy limit out of the public ledger.
+
+## Problem
+
+AI agents are increasingly being trusted to perform actions involving sensitive information and valuable resources.
+
+Traditional authorization systems can require an application to reveal or expose the rules used to make an authorization decision.
+
+For example, an organization may have an internal rule that an AI agent can approve expenses only up to a certain limit. The organization may want to prove that a particular action was authorized without publicly revealing that internal limit.
+
+PrivateOps explores this privacy preserving authorization model using Midnight Compact smart contracts and zero knowledge proofs.
+
+## Solution
+
+PrivateOps separates authorization information into public and private components.
+
+The private policy is supplied through a local witness. The Compact circuit compares the requested action against the private policy and produces a public authorization result.
+
+```text
+User / AI Agent
+      |
+      | Action Request
+      v
+Private Policy
+      |
+      | Private Witness
+      v
+PrivateOps Compact Contract
+      |
+      | Zero Knowledge Proof
+      v
+Authorization Decision
+      |
+      | Deliberate disclosure
+      v
+Public Ledger Result
+```
 
 ## Core Idea
 
-PrivateOps demonstrates a simple privacy preserving authorization workflow:
+The core idea is:
+
+> An AI agent should be able to prove that an action follows a private authorization rule without exposing the rule itself.
+
+The Level 1 implementation evaluates:
 
 ```text
-User Policy
-     |
-     v
-Private Witness
-     |
-     v
-PrivateOps Compact Contract
-     |
-     v
-Zero Knowledge Proof
-     |
-     v
-Authorization Decision
-     |
-     v
-Public Result
+actionAmount <= policyLimit
 ```
 
-The private policy is supplied through a local witness.
+The action amount and authorization result become public ledger state through deliberate `disclose()` calls.
 
-The smart contract verifies the relationship between the private policy and the requested action while only disclosing the intended public result.
+The private policy limit remains private.
 
-## Architecture
+## Initial Idea
 
-```text
-+-----------------------------+
-|        User / Agent         |
-+--------------+--------------+
-               |
-               | Action Request
-               v
-+-----------------------------+
-|       PrivateOps CLI        |
-+--------------+--------------+
-               |
-               | Private Policy
-               v
-+-----------------------------+
-|       Local Witness         |
-|                             |
-|   getPolicyLimit()          |
-+--------------+--------------+
-               |
-               v
-+-----------------------------+
-|    PrivateOps Compact       |
-|        Contract             |
-|                             |
-| actionAmount <= policyLimit |
-+--------------+--------------+
-               |
-               v
-+-----------------------------+
-|      Zero Knowledge         |
-|          Proof              |
-+--------------+--------------+
-               |
-               v
-+-----------------------------+
-| Public Authorization Result |
-|                             |
-| AUTHORIZED / NOT AUTHORIZED |
-+-----------------------------+
-```
+PrivateOps started from the idea that AI agents will increasingly perform sensitive actions on behalf of users and organizations.
+
+The project explores whether those agents can operate under private authorization policies while still producing verifiable authorization results.
+
+The first Level 1 implementation uses a private spending limit as the policy example. A policy limit such as `500` remains private, while an action such as `300` can be verified as authorized.
+
+Future versions can extend this model to more complex policies, agent identity, organizational permissions, spending controls, and other privacy sensitive workflows.
 
 ## Privacy Model
 
-PrivateOps currently uses the following model:
-
-### Private
-
-The authorization policy limit is provided through a witness:
-
-```text
-getPolicyLimit()
-```
-
-The policy limit is not stored as a public ledger value.
+PrivateOps divides information into three categories.
 
 ### Public
 
-The contract exposes:
+The contract exposes the following public ledger state:
 
 ```text
 lastActionAmount
 lastActionAuthorized
 ```
 
-This means the current action amount and resulting authorization status are intentionally disclosed.
+These values are deliberately disclosed.
 
-This design demonstrates the basic concept while keeping the underlying authorization rule private.
+### Private
+
+The policy is supplied through the private witness:
+
+```text
+getPolicyLimit()
+```
+
+The corresponding policy limit is maintained in private application state and is not stored as public ledger state.
+
+### Proven Without Revealing
+
+The circuit proves the relationship:
+
+```text
+actionAmount <= policyLimit
+```
+
+The authorization result can therefore be disclosed without publishing the private policy limit itself.
 
 ## Smart Contract
 
-The core contract is located at:
+The main Compact contract is:
 
 ```text
 contracts/privateops.compact
 ```
 
-The contract maintains two public ledger values:
+The contract contains public ledger state:
 
 ```compact
 export ledger lastActionAmount: Uint<64>;
 export ledger lastActionAuthorized: Boolean;
 ```
 
-The private policy is supplied through a witness:
+It also defines the private witness:
 
 ```compact
 witness getPolicyLimit(): Uint<64>;
@@ -174,170 +168,300 @@ export circuit authorizeAction(actionAmount: Uint<64>): [] {
 }
 ```
 
-The important privacy boundary is that `policyLimit` is obtained privately through the witness rather than being stored in public ledger state.
+The contract deliberately discloses only the values intended to be public.
 
-## Technology Stack
+## Level 1 Contract Requirements
 
-| Technology | Purpose |
+| Requirement | PrivateOps implementation |
 |---|---|
-| Midnight Network | Privacy preserving blockchain |
-| Compact | Smart contract language |
-| Compact Runtime | Contract execution and witness integration |
-| TypeScript | Application and CLI logic |
-| Node.js | Development runtime |
-| Docker | Proof server environment |
-| Midnight JS | Deployment and blockchain integration |
-| WSL2 Ubuntu | Development environment |
+| Public ledger state | `lastActionAmount`, `lastActionAuthorized` |
+| Private witness | `getPolicyLimit()` |
+| Deliberate `disclose()` | Action amount and authorization result |
+| Public/private explanation | Comments in `contracts/privateops.compact` |
+| Circuit logic | `authorizeAction()` |
+| Generated managed directory | `contracts/managed/privateops/` |
+| Automated tests | `tests/privateops.test.ts` |
+| Deployment | Midnight Preview |
 
-## Project Structure
+## Architecture
 
 ```text
-privateops/
-├── contracts/
-│   ├── privateops.compact
-│   └── managed/
-│       └── privateops/
-├── scripts/
-│   ├── clean.mjs
-│   └── e2e-check.ts
-├── src/
-│   ├── check-balance.ts
-│   ├── cli.ts
-│   ├── deploy.ts
-│   ├── network.ts
-│   ├── setup.ts
-│   ├── wallet-state.ts
-│   ├── wallet.ts
-│   └── witnesses.ts
-├── docker-compose.yml
-├── package.json
-├── package-lock.json
-└── README.md
++-----------------------------+
+|        User / Agent         |
++--------------+--------------+
+               |
+               | Action Request
+               v
++-----------------------------+
+|       PrivateOps CLI        |
++--------------+--------------+
+               |
+               | Private Policy
+               v
++-----------------------------+
+|       Private Witness       |
+|       getPolicyLimit()      |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+|     Compact Smart Contract  |
+|     authorizeAction()       |
++--------------+--------------+
+               |
+               | Zero Knowledge Proof
+               v
++-----------------------------+
+|       Midnight Network      |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+|      Public Ledger State    |
+|  lastActionAmount           |
+|  lastActionAuthorized       |
++-----------------------------+
 ```
 
-## Getting Started
+## Tech Stack
 
-### Requirements
+- Midnight Network
+- Compact
+- Compact Standard Library
+- Node.js v22
+- TypeScript
+- npm
+- Docker
+- Midnight Proof Server
+- Midnight Compact Runtime
+- Midnight Wallet SDK
+- Midnight Preview Network
+- Git
+- GitHub
 
-Before running PrivateOps, install:
+## Prerequisites
 
-- Node.js 22+
+The project requires:
+
+- Node.js v22
 - npm
 - Docker Desktop
-- WSL2 on Windows
+- WSL2 when developing on Windows
+- Midnight Compact compiler
 - Midnight Compact CLI
-- Compact compiler
+- Git
+- A Midnight wallet for deployment
+- Access to Midnight Preview or Preprod
+- A funded deployment wallet
+- Midnight proof server
 
-### Clone the Repository
+Verify the local toolchain:
 
 ```bash
-git clone <your-repository-url>
+node --version
+npm --version
+docker --version
+compact --version
+```
+
+## Setup
+
+Clone the repository:
+
+```bash
+git clone https://github.com/mosesifunanya/privateops.git
+```
+
+Enter the project directory:
+
+```bash
 cd privateops
 ```
 
-### Install Dependencies
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-## Compile the Contract
-
-Compile the PrivateOps Compact contract with:
-
-```bash
-npm run compile
-```
-
-The generated contract artifacts are written to:
-
-```text
-contracts/managed/privateops/
-```
-
-A successful compilation includes the `authorizeAction` circuit.
-
-## Start the Proof Server
-
-Start the required local services with:
+Start the proof server:
 
 ```bash
 npm run proof-server:start
 ```
 
-Stop the services with:
-
-```bash
-npm run proof-server:stop
-```
-
-## Select the Midnight Network
-
-PrivateOps supports the configured Midnight environments.
-
-To select Preview:
-
-```bash
-npm run network -- --network preview
-```
-
-The current project was deployed and tested on Midnight Preview.
-
-## Setup
-
-Run:
+Run project setup:
 
 ```bash
 npm run setup
 ```
 
-This prepares the local environment and required Midnight services.
+## Compile the Contract
+
+Compile the PrivateOps contract:
+
+```bash
+npm run compile
+```
+
+The project compile script runs:
+
+```text
+compact compile contracts/privateops.compact contracts/managed/privateops
+```
+
+A successful compilation generates:
+
+```text
+contracts/managed/privateops/
+├── compiler/
+├── contract/
+├── keys/
+└── zkir/
+```
+
+The generated managed directory contains the compiled contract artifacts and zero knowledge related artifacts used by the application.
+
+## Run Tests
+
+Run the Level 1 test suite:
+
+```bash
+npm test
+```
+
+The test suite contains 3 tests covering the required Level 1 areas:
+
+1. Circuit logic
+2. State transitions
+3. Protection of private inputs
+
+Expected result:
+
+```text
+tests 3
+pass 3
+fail 0
+```
+
+Run TypeScript validation:
+
+```bash
+npx tsc --noEmit
+```
+
+Run end to end verification:
+
+```bash
+npm run test:e2e
+```
+
+## Test Coverage
+
+### Circuit Logic
+
+The first test verifies that an action within the private policy is authorized.
+
+Example:
+
+```text
+300 <= 500
+```
+
+Expected result:
+
+```text
+Authorized = true
+```
+
+### State Transitions
+
+The second test verifies that public authorization state changes correctly when the contract processes different actions.
+
+Example:
+
+```text
+300 -> Authorized
+700 -> Not Authorized
+```
+
+### Private Input Protection
+
+The third test verifies that the public ledger does not expose the private policy or witness function.
+
+The public ledger contains only:
+
+```text
+lastActionAmount
+lastActionAuthorized
+```
+
+The policy value itself is not part of the public ledger.
 
 ## Deployment
 
-Deploy PrivateOps with:
+PrivateOps was deployed as the custom Level 1 contract rather than the original Hello World contract.
+
+Deploy to Midnight Preview with:
 
 ```bash
-npm run deploy
+npm run deploy -- --network preview
 ```
 
-The deployment process prepares the wallet, proof environment, required network configuration, and contract deployment.
-
-Deployment information is stored locally in:
+### Preview Deployment
 
 ```text
-.midnight-state.json
-```
+Network:
+Midnight Preview
 
-Wallet synchronization state is stored locally in:
-
-```text
-.midnight-wallet-state/
-```
-
-These files are intentionally ignored by Git because they contain local deployment and wallet state.
-
-## Preview Deployment
-
-PrivateOps has been successfully deployed to Midnight Preview.
-
-### Contract Address
-
-```text
+Contract Address:
 e3836a466cf5ee97443fc970d36fddda4fff407707250c9778e723cbbc2d04de
 ```
 
-Network:
+The deployed contract was successfully verified through the project end to end check.
+
+## Authorization Testing
+
+The deployed contract was tested with the Level 1 policy limit.
+
+### Authorized Action
 
 ```text
-Midnight Preview
+Policy Limit: 500
+Action Amount: 300
+Result: Authorized
 ```
 
-The contract address above represents the deployed PrivateOps contract used during Level 1 testing.
+### Unauthorized Action
+
+```text
+Policy Limit: 500
+Action Amount: 700
+Result: Not Authorized
+```
+
+The policy limit remains private while the action amount and authorization result are deliberately disclosed.
+
+## End to End Verification
+
+Run:
+
+```bash
+npm run test:e2e
+```
+
+Successful verification reports:
+
+```text
+e2e-check passed
+contractAddress: e3836a466cf5ee97443fc970d36fddda4fff407707250c9778e723cbbc2d04de
+network: preview
+privateStateId: privateOpsPrivateState
+```
 
 ## CLI
 
-Start the PrivateOps command line interface with:
+Start the PrivateOps CLI:
 
 ```bash
 npm run cli
@@ -353,130 +477,116 @@ The CLI provides:
 5. Exit
 ```
 
-## Authorization Testing
-
-The authorization circuit has been tested with different action amounts using a private policy limit of `500`.
-
-### Authorized Action
-
-Input:
+The Level 1 private policy is initialized to:
 
 ```text
-Policy Limit: 500
-Action Amount: 300
+500
 ```
 
-Result:
+## Project Structure
 
 ```text
-Authorized: YES
+privateops/
+├── contracts/
+│   ├── privateops.compact
+│   └── managed/
+│       └── privateops/
+│           ├── compiler/
+│           ├── contract/
+│           ├── keys/
+│           └── zkir/
+│
+├── scripts/
+│   ├── clean.mjs
+│   └── e2e-check.ts
+│
+├── src/
+│   ├── check-balance.ts
+│   ├── cli.ts
+│   ├── deploy.ts
+│   ├── network.ts
+│   ├── setup.ts
+│   ├── wallet-state.ts
+│   ├── wallet.ts
+│   └── witnesses.ts
+│
+├── tests/
+│   └── privateops.test.ts
+│
+├── docs/
+│   └── screenshots/
+│       ├── compile-success.png
+│       ├── tests-passing.png
+│       └── deployment-success.png
+│
+├── README.md
+├── package.json
+└── tsconfig.json
 ```
 
-Transaction ID:
+## Screenshots
 
-```text
-00ee309cbf52fc4b615d6c4010361b812655c1d25a90e2f08cd0b1a0fdc0de5a6e
-```
+The following screenshots provide Level 1 evidence from the actual PrivateOps project.
 
-Block height:
+### Contract Compilation
 
-```text
-968014
-```
+The compilation evidence shows successful compilation of `contracts/privateops.compact`, the `authorizeAction` circuit, and the generated managed directory.
 
-### Unauthorized Action
+![PrivateOps contract compilation](docs/screenshots/compile-success.png)
 
-Input:
+### Passing Level 1 Tests
 
-```text
-Policy Limit: 500
-Action Amount: 700
-```
+The test evidence shows all 3 required tests passing with 0 failures.
 
-Result:
+![PrivateOps Level 1 tests](docs/screenshots/tests-passing.png)
 
-```text
-Authorized: NO
-```
+### Preview Deployment and Contract Address
 
-Transaction ID:
+The deployment evidence shows successful end to end verification, the Preview network, and the deployed PrivateOps contract address.
 
-```text
-000925b77d3d2d46b3c7e932f6e44e9bf2b2ef6b74ea92ae7977af73784480fa0d
-```
+![PrivateOps Preview deployment](docs/screenshots/deployment-success.png)
 
-Block height:
-
-```text
-968026
-```
-
-These tests demonstrate that the same private authorization policy can produce different public authorization results depending on the requested action.
-
-## End to End Verification
-
-PrivateOps includes an end to end verification script:
-
-```bash
-npm run test:e2e
-```
-
-The test verifies the deployed contract and reconnects to the configured Midnight network.
-
-A successful run reports:
-
-```text
-e2e-check passed
-contractAddress: e3836a466cf5ee97443fc970d36fddda4fff407707250c9778e723cbbc2d04de
-network: preview
-privateStateId: privateOpsPrivateState
-```
+> Screenshots must not contain wallet recovery phrases, private keys, or other sensitive credentials.
 
 ## Development Commands
 
-Compile the Compact contract:
+Install dependencies:
+
+```bash
+npm install
+```
+
+Compile:
 
 ```bash
 npm run compile
 ```
 
-Run TypeScript checks:
-
-```bash
-npx tsc --noEmit
-```
-
-Start the proof server:
+Start proof server:
 
 ```bash
 npm run proof-server:start
 ```
 
-Stop the proof server:
+Stop proof server:
 
 ```bash
 npm run proof-server:stop
 ```
 
-Select Preview:
-
-```bash
-npm run network -- --network preview
-```
-
-Run setup:
+Setup:
 
 ```bash
 npm run setup
 ```
 
-Deploy:
+Deploy to Preview:
 
 ```bash
-npm run deploy
+npm run deploy -- --network preview
 ```
 
-Run the CLI:
+Start CLI:
 
 ```bash
 npm run cli
@@ -486,6 +596,18 @@ Check wallet balance:
 
 ```bash
 npm run check-balance
+```
+
+Check network:
+
+```bash
+npm run network -- --network preview
+```
+
+Run tests:
+
+```bash
+npm test
 ```
 
 Run end to end verification:
@@ -502,129 +624,145 @@ npm run clean
 
 ## Security Considerations
 
-PrivateOps is currently an experimental Level 1 implementation.
+PrivateOps is a Level 1 prototype for demonstrating privacy preserving authorization.
 
-The current version demonstrates the privacy preserving authorization concept and should not be treated as production authorization infrastructure.
+Never commit wallet recovery phrases, private keys, or wallet credentials to GitHub.
 
-Important considerations include:
+Private policy values should also be protected from accidental exposure in production applications.
 
-- Testnet wallets should not contain real funds.
-- Private keys and recovery phrases must never be committed to Git.
-- Local wallet state must remain private.
-- Authorization policies should be carefully designed before production use.
-- Contract logic should undergo security review before handling valuable assets.
-- The current implementation intentionally discloses the action amount and authorization result.
+The current deployment is on Midnight Preview and is intended for challenge development, testing, and demonstration.
 
 ## Current Level 1 Status
 
-PrivateOps has completed the core Level 1 implementation:
+The Level 1 implementation currently provides:
 
-- Compact contract created
-- Private witness implemented
-- Authorization circuit implemented
-- Contract compilation successful
-- Managed contract artifacts generated
-- Proof server configured
-- Midnight Preview environment configured
-- Contract deployed to Preview
-- Deployment address recorded
-- Authorized transaction tested
-- Unauthorized transaction tested
-- End to end verification passed
-- Project documentation prepared
+- Custom PrivateOps Compact contract
+- Public ledger state
+- Private policy witness
+- Deliberate `disclose()` usage
+- Authorization circuit
+- Zero knowledge proof based verification
+- Generated managed contract artifacts
+- 3 automated Level 1 tests
+- Passing test suite
+- End to end verification
+- Midnight Preview deployment
+- CLI interaction
+- README documentation
+- Compile, test, and deployment evidence screenshots
+
+## Level 1 Final Checklist
+
+| Requirement | Status |
+|---|---|
+| Contract compiles with Compact | Complete |
+| `contracts/managed/privateops/` generated | Complete |
+| Public ledger state implemented | Complete |
+| Private witness implemented | Complete |
+| Deliberate `disclose()` used | Complete |
+| Public/private comment block included | Complete |
+| 3+ tests written | Complete |
+| Circuit logic test passing | Complete |
+| State transition test passing | Complete |
+| Private input protection test passing | Complete |
+| All tests passing | Complete |
+| Custom contract deployed | Complete |
+| Deployed to Midnight Preview | Complete |
+| Contract address visible in README | Complete |
+| Mandatory README sections included | Complete |
+| Compile screenshot added | Complete |
+| Tests screenshot added | Complete |
+| Deployment/address screenshot added | Complete |
+| 5+ meaningful commits | Complete |
+| Public GitHub repository | Pending final push |
 
 ## Roadmap
 
-### Level 2
+### Level 1 — New Moon
 
-Introduce a user interface for interacting with PrivateOps.
+Completed:
 
-Planned capabilities include:
+- Project scaffolding
+- Compact smart contract
+- Public ledger state
+- Private witness
+- Authorization circuit
+- Zero knowledge proof based verification
+- Contract compilation
+- Managed artifacts
+- Automated tests
+- Preview deployment
+- CLI interaction
+- Documentation
+- Evidence screenshots
 
+### Level 2 — Frontend and Wallet
+
+Planned:
+
+- Web interface
 - Wallet connection
-- Policy configuration
-- Action authorization interface
-- Authorization history
-- Contract interaction from the browser
+- Agent identity
+- Policy management
+- Authorization dashboard
+- Transaction history
+- Proof and authorization visualization
 
-### Level 3
+### Level 3 — Advanced Privacy and Agent Infrastructure
 
-Introduce AI agent identity and policy management.
+Planned:
 
-Potential capabilities include:
-
-- Agent registration
-- Agent specific policies
-- Policy based permissions
-- Action categories
-- Authorization workflows
-
-### Level 4
-
-Expand the system to Midnight Preprod and improve the application architecture.
-
-Potential work includes:
-
-- More comprehensive testing
-- Better privacy workflows
-- Improved state management
-- Production style frontend
-- Agent authorization services
-
-### Level 5
-
-Prepare PrivateOps for broader ecosystem usage.
-
-Potential areas include:
-
-- Developer SDK
-- API integrations
-- Policy templates
-- Agent tooling
-- Monitoring
-- Better user experience
-
-### Level 6
-
-Prepare the system for Midnight Mainnet deployment.
-
-The long term goal is to make PrivateOps a practical privacy preserving authorization layer for AI agents and automated applications.
+- More complex authorization policies
+- Multiple policy types
+- Agent identity management
+- Organization level authorization
+- CI/CD
+- Additional network deployments
+- Production hardening
 
 ## Future Use Cases
 
-PrivateOps can potentially be extended to privacy preserving authorization scenarios such as:
+### AI Agent Spending Controls
 
-### AI Spending Authorization
+Organizations could define private spending policies for autonomous AI agents and verify authorization without exposing internal limits.
 
-An AI agent requests permission to make a payment while the user's private spending limit remains undisclosed.
+### Enterprise Authorization
 
-### Enterprise Agent Permissions
+Businesses could verify authorization decisions while keeping internal authorization rules private.
 
-Organizations can define private policies controlling what AI agents are allowed to execute.
+### Private Procurement
 
-### Automated Treasury Operations
+Procurement workflows could verify compliance with private organizational thresholds.
 
-Treasury agents can prove that transactions follow predefined private authorization rules.
+### Agent Permissions
 
-### Private API Authorization
+AI agents could prove that an action is permitted by a private permission policy.
 
-An agent can prove that an API request satisfies a private policy without revealing the complete policy.
+### Financial Controls
 
-### Autonomous Agents
+Financial applications could verify compliance with private authorization rules.
 
-AI agents can operate within verifiable boundaries while keeping sensitive business rules private.
+### Privacy Preserving Automation
+
+Automated systems could prove that actions comply with private business rules while maintaining confidentiality.
 
 ## Vision
 
-AI agents are becoming capable of making decisions and executing actions on behalf of users and organizations.
+PrivateOps explores a future where AI agents can operate with verifiable permissions without requiring their underlying authorization policies to become public.
 
-PrivateOps explores a future where those agents do not need to reveal every rule they operate under.
+Instead of asking:
 
-Instead, an agent can provide cryptographic evidence that an action followed an authorized private policy.
+```text
+What is the private rule?
+```
 
-The goal is simple:
+the system can focus on:
 
-> Prove the action was allowed without revealing the rule.
+```text
+Can you prove that this action follows the rule?
+```
+
+This creates a foundation for privacy preserving authorization for autonomous software agents.
 
 ## Contributing
 
@@ -633,30 +771,30 @@ Contributions are welcome.
 Potential contribution areas include:
 
 - Compact smart contract development
-- Privacy and zero knowledge design
-- Midnight integration
-- TypeScript development
+- Privacy and zero knowledge proof design
+- Agent authorization
 - Frontend development
-- AI agent integration
+- Wallet integration
 - Testing
-- Security
+- Security improvements
 - Documentation
 - Developer tooling
-
-For significant changes, please open an issue first to discuss the proposed change.
+- Midnight ecosystem integrations
 
 ## Author
 
-Moses Ifunanya Nobei
+**Moses Ifunanya Nobei**
 
 Blockchain Developer | Full Stack Developer 
 
+GitHub: https://github.com/mosesifunanya
+
 ## License
 
-This project is licensed under the MIT License.
+This project is released under the MIT License.
 
 ## Project Status
 
-PrivateOps is an active experimental project being developed as part of the Midnight ecosystem challenge.
+PrivateOps is a working Level 1 Midnight Builder Challenge prototype demonstrating privacy preserving authorization using Compact and Midnight zero knowledge proofs.
 
-The current implementation focuses on demonstrating the core privacy preserving authorization concept and establishing the foundation for future levels of development.
+The current implementation is intended for learning, experimentation, testing, and Midnight ecosystem development.
