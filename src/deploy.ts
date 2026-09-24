@@ -53,6 +53,13 @@ const PRIVATE_STATE_ID = 'privateOpsPrivateState';
 // Upper bound on the DUST wait.
 const DUST_WAIT_TIMEOUT_MS = 5 * 60 * 1000;
 
+// Preprod synchronization window.
+//
+// The Preprod network can report a very large synchronization target.
+// We use the wallet state's own progress predicate rather than calling
+// waitForSyncedState() on the individual child wallet classes.
+const PREPROD_ALLOWED_SYNC_GAP = 1_600_000n;
+
 // ─── Network configuration ────────────────────────────────────────────────────
 
 const { network, config: networkConfig } = resolveNetwork();
@@ -70,6 +77,41 @@ const SEED = WALLET.seed;
   if (notice) {
     console.log(notice);
   }
+}
+
+// ─── Preprod wallet synchronization ──────────────────────────────────────────
+
+async function waitForPreprodWalletState(
+  walletCtx: WalletContext,
+) {
+  return Rx.firstValueFrom(
+    walletCtx.wallet
+      .state()
+      .pipe(
+        Rx.filter((state) => {
+          const shieldedReady =
+            state.shielded.progress.isCompleteWithin(
+              PREPROD_ALLOWED_SYNC_GAP,
+            );
+
+          const unshieldedReady =
+            state.unshielded.progress.isCompleteWithin(
+              PREPROD_ALLOWED_SYNC_GAP,
+            );
+
+          const dustReady =
+            state.dust.progress.isCompleteWithin(
+              PREPROD_ALLOWED_SYNC_GAP,
+            );
+
+          return (
+            shieldedReady &&
+            unshieldedReady &&
+            dustReady
+          );
+        }),
+      ),
+  );
 }
 
 // ─── Proof server readiness ───────────────────────────────────────────────────
@@ -163,7 +205,7 @@ const compiledContract =
     ),
   );
 
-// ─── Providers ─────────────────────────────────────────────────────────────────
+// ─── Providers ────────────────────────────────────────────────────────────────
 
 async function createProviders(
   walletCtx: WalletContext,
@@ -258,7 +300,7 @@ async function createProviders(
   };
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
   console.log(
@@ -331,8 +373,23 @@ async function main() {
       );
     }, 5000);
 
-  const state =
-    await walletCtx.wallet.waitForSyncedState();
+  // ─── Wallet synchronization ────────────────────────────────────────────────
+
+  let state;
+
+  if (network === 'preprod') {
+    console.log(
+      '\n  ℹ  Waiting for Preprod wallet state...',
+    );
+
+    state =
+      await waitForPreprodWalletState(
+        walletCtx,
+      );
+  } else {
+    state =
+      await walletCtx.wallet.waitForSyncedState();
+  }
 
   clearInterval(syncInterval);
 
@@ -794,9 +851,18 @@ async function main() {
       }
 
       if (isDustShortage) {
-        const currentState =
-          await walletCtx.wallet
-            .waitForSyncedState();
+        let currentState;
+
+        if (network === 'preprod') {
+          currentState =
+            await waitForPreprodWalletState(
+              walletCtx,
+            );
+        } else {
+          currentState =
+            await walletCtx.wallet
+              .waitForSyncedState();
+        }
 
         const dustBalance =
           currentState.dust.balance(
