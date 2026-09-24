@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "file": "index.js",
+  "sourceRoot": "../../../../",
+  "sources": ["contracts/privateops.compact"],
+  "names": [],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EAAA;;;;;;;;;;;;;MAkBA,AAAA,eAOC;;;;;cAP8B,cAAsB;;;;;;;;;;;;;;;;;;yCAAtB,cAAsB;;;;;;;;;iDAAtB,cAAsB;;;OAOpD;;;;GAAC;EAzBF;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;IAMA;;;;;;;;;yEAAyC;IACzC;;;;;;;;;yEAA4C;;;;;;;GAkB1C;EAdF,AAAA,iBAAmC;;0DAAnC,cAAmC;;;;;;;;;;;;;;GAAA;EAOnC,AAAA,kBAOC,4BAP8B,cAAsB;UAC3C,aAA8B;UAE9B,YAAwC,GAA3B,cAAY,IAAI,aAAW;IAE9C;;;;;;;2HAA4B,cAAY;;yEAAxB;IAChB;;;;;;;2HAAgC,YAAU;;yEAAtB;;GACvB;;;;;;;;;;;;;;;;IAnBD;qCAAA;;;;;;;;;;;0GAAyC;KAAA;IACzC;qCAAA;;;;;;;;;;;0GAA4C;KAAA;;;;;;;;;;"
+}
