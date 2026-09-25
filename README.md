@@ -8,12 +8,155 @@
 [![Live demo](https://img.shields.io/badge/live_demo-privateops--liard.vercel.app-84cc16?style=flat-square)](https://privateops-liard.vercel.app)
 [![Network](https://img.shields.io/badge/network-Midnight_Preprod-22d3ee?style=flat-square)](https://midnight.network)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)](LICENSE)
+[![CI](https://github.com/mosesifunanya/privateops/actions/workflows/ci.yml/badge.svg)](https://github.com/mosesifunanya/privateops/actions/workflows/ci.yml)
+
+> Privacy-preserving authorization for AI agents on Midnight Network.
+
+## Live Demo
+
+https://privateops-liard.vercel.app/
+
+## Contract Address
+
+| Network | Address |
+|---|---|
+| Preprod | `0338ff933381e9c7dcd01a88c29c60a28f4da6cc78daca7a49718430d68adb53` |
+
+## What This Does
 
 PrivateOps is a privacy-preserving authorization dApp built on the Midnight Network.
 
 It allows a user to prove that an action is authorized by a private policy without publicly revealing the private information behind that authorization.
 
-The project demonstrates how Midnight's zero-knowledge architecture can be used to build applications where authorization can be verified while sensitive policy information remains private.
+The application uses the `authorizeAction()` Compact circuit to evaluate an authorization request, generate a zero-knowledge proof, and submit the resulting transaction through a Midnight-compatible wallet.
+
+## Privacy Model
+
+### PUBLIC:
+- Midnight Preprod network
+- PrivateOps contract address
+- Connected wallet address
+- Public action amount
+- Transaction information
+- Public blockchain transaction data
+
+### PRIVATE:
+- Authorization policy information used by the circuit
+- Private witness information used during proof generation
+
+### PROVED without revealing:
+- The requested action satisfies the authorization conditions enforced by the PrivateOps circuit.
+- The authorization result can be verified without exposing the private information used to generate the proof.
+
+## Privacy Claim
+
+> An on-chain observer can see the public transaction information and other data intentionally exposed by the application, but cannot directly observe the private witness used by the authorization circuit.
+
+The purpose of PrivateOps is not to hide the existence of a transaction. Instead, it demonstrates how a transaction can carry a verifiable authorization result without exposing the sensitive private information behind that result.
+
+## Tech Stack
+
+### Blockchain
+- Midnight Network
+- Midnight Preprod
+- Compact
+- Zero-Knowledge Proofs
+
+### Frontend
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- Motion
+- Lucide React
+
+### Midnight Integration
+- Midnight.js
+- `@midnight-ntwrk/dapp-connector-api`
+- Midnight proving provider
+- Midnight indexer
+- Midnight private state provider
+- Midnight wallet integration
+
+### Development
+- Node.js 22+
+- npm
+- Git
+- Docker for local Midnight infrastructure where required
+
+## Prerequisites
+
+- Node.js 22+
+- npm
+- Midnight-compatible wallet
+- Midnight Preprod access
+
+## Setup & Run Locally
+
+Clone the repository:
+
+```bash
+git clone https://github.com/mosesifunanya/privateops.git
+cd privateops
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create `.env.local` with:
+
+```env
+NEXT_PUBLIC_PRIVATEOPS_CONTRACT_ADDRESS=0338ff933381e9c7dcd01a88c29c60a28f4da6cc78daca7a49718430d68adb53
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+## Run Tests
+
+```bash
+npm test
+```
+
+The test suite covers:
+1. Circuit authorization logic
+2. State transitions
+3. Privacy behavior ensuring the private policy is not exposed through the public ledger
+
+## CI/CD
+
+GitHub Actions runs the PrivateOps CI workflow on pushes to `main` or `master` and on pull requests.
+
+The workflow:
+1. Checks out the repository
+2. Sets up Node.js 22
+3. Installs dependencies
+4. Compiles the Compact contract
+5. Runs the test suite
+
+Workflow file:
+
+```text
+.github/workflows/ci.yml
+```
+
+## Product Proposal
+
+See [PROPOSAL.md](PROPOSAL.md).
+
+---
 
 ---
 
@@ -27,7 +170,7 @@ Traditional applications often expose or centrally store the information used to
 
 PrivateOps demonstrates a different approach.
 
-The authorization rule can remain private while the user produces a zero-knowledge proof showing that the requested action satisfies the rule.
+The authorization rule can remain private while the user produces a zero-knowledge proof showing that therequested action satisfies the rule.
 
 For example:
 
@@ -79,31 +222,31 @@ PrivateOps is divided into several layers.
 
 ```text
 +-------------------------------------------------------------+
-|                           USER                              |
-|                                                             |
-|             Connect Wallet / Request Action                 |
+|                           USER         |
+|         |
+|             Connect Wallet / Request Action         |
 +-------------------------------+-----------------------------+
                                 |
                                 v
 +-------------------------------------------------------------+
-|                     PRIVATEOPS FRONTEND                     |
-|                                                             |
-|  Next.js / React                                             |
-|                                                             |
+|                     PRIVATEOPS FRONTEND         |
+|         |
+|  Next.js / React          |
+|         |
 |  +-------------------+       +---------------------------+  |
-|  | WalletConnect     |       | CircuitCall               |  |
-|  |                   |       |                           |  |
+|  | WalletConnect     |       | CircuitCall      |  |
+|  |                   |       |      |  |
 |  | Wallet state      |       | Authorization request     |  |
-|  | Address           |       | Proof status              |  |
-|  | Connection        |       | Transaction result        |  |
+|  | Address           |       | Proof status      |  |
+|  | Connection        |       | Transaction result      |  |
 |  +---------+---------+       +-------------+-------------+  |
 +------------|-------------------------------|----------------+
              |                               |
              v                               v
 +------------------------+       +-----------------------------+
 | Midnight Wallet       |       | Midnight.js Integration     |
-|                        |       |                             |
-| Connect                |       | Proof provider              |
+|                        |       |          |
+| Connect                |       | Proof provider          |
 | Sign / submit          |       | Private state provider      |
 | Shielded keys          |       | Public data provider        |
 +------------------------+       +--------------+--------------+
@@ -111,18 +254,18 @@ PrivateOps is divided into several layers.
                                                 v
                                +------------------------------+
                                |      PrivateOps Contract     |
-                               |                              |
+                               |         |
                                |      Compact Circuit        |
-                               |                              |
+                               |         |
                                |      authorizeAction()       |
                                +--------------+---------------+
                                               |
                                               v
                                +------------------------------+
                                |       Midnight Preprod       |
-                               |                              |
+                               |         |
                                |  Zero-Knowledge Transaction  |
-                               |  Public Ledger Data          |
+                               |  Public Ledger Data         |
                                +------------------------------+
 ```
 
@@ -171,47 +314,6 @@ The private witness is never displayed in the interface.
 
 ---
 
-# Privacy Model
-
-## What Is Public
-
-The following information may be visible:
-
-- Midnight Preprod network
-- PrivateOps contract address
-- Connected wallet address
-- Public action amount
-- Transaction information
-- Public blockchain transaction data
-
-## What Is Private
-
-PrivateOps keeps authorization information used by the circuit private.
-
-This includes the private policy information used to determine whether an action should be authorized.
-
-Private inputs are not displayed in the frontend.
-
-## What Does the User Prove?
-
-The user proves that the requested action satisfies the authorization conditions enforced by the PrivateOps circuit.
-
-The proof allows the authorization to be verified without exposing the private information used to generate that proof.
-
----
-
-# Privacy Claim
-
-PrivateOps demonstrates the following privacy model:
-
-> An on-chain observer can see the public transaction information and other data intentionally exposed by the application, but cannot directly observe the private witness used by the authorization circuit.
-
-The purpose of the application is not to hide the existence of a transaction.
-
-Instead, it demonstrates how a transaction can carry a verifiable authorization result without exposing the sensitive private information behind that result.
-
----
-
 # Smart Contract
 
 PrivateOps uses a Compact smart contract containing the authorization circuit.
@@ -224,7 +326,7 @@ authorizeAction()
 
 The contract is compiled with the required zero-knowledge artifacts used by the frontend proving flow.
 
-The deployed contract is accessed through Midnight's Preprod infrastructure.
+The deployed contract is accessed through Midnight'sPreprod infrastructure.
 
 ---
 
@@ -250,47 +352,11 @@ This is the contract address currently configured for the PrivateOps frontend.
 
 No separate Preview contract address has been deployed.
 
-The frontend preview environment uses the PrivateOps Preprod contract:
+The frontend preview environment uses the PrivateOpsPreprod contract:
 
 ```text
 0338ff933381e9c7dcd01a88c29c60a28f4da6cc78daca7a49718430d68adb53
 ```
-
----
-
-# Technology Stack
-
-## Blockchain
-
-- Midnight Network
-- Midnight Preprod
-- Compact
-- Zero-Knowledge Proofs
-
-## Frontend
-
-- Next.js
-- React
-- TypeScript
-- Tailwind CSS
-- Motion
-- Lucide React
-
-## Midnight Integration
-
-- Midnight.js
-- `@midnight-ntwrk/dapp-connector-api`
-- Midnight proving provider
-- Midnight indexer
-- Midnight private state provider
-- Midnight wallet integration
-
-## Development
-
-- Node.js
-- npm
-- Git
-- Docker for local Midnight infrastructure where required
 
 ---
 
@@ -437,63 +503,13 @@ public/
     +-- authorizeAction.bzkir
 ```
 
-Additional compiled contract artifacts are available under:
+Additional compiled contract artifacts are availableunder:
 
 ```text
 public/contract/compiled/
 ```
 
 The proof generation flow is designed so that private witness information is not displayed to the user.
-
----
-
-# Running Locally
-
-## Requirements
-
-- Node.js 22+
-- npm
-- Midnight-compatible wallet
-- Midnight Preprod access
-
-## Clone the Repository
-
-```bash
-git clone <YOUR_REPOSITORY_URL>
-cd privateops
-```
-
-## Install Dependencies
-
-```bash
-npm install
-```
-
-## Environment Configuration
-
-Create:
-
-```text
-.env.local
-```
-
-Add:
-
-```env
-NEXT_PUBLIC_PRIVATEOPS_CONTRACT_ADDRESS=0338ff933381e9c7dcd01a88c29c60a28f4da6cc78daca7a49718430d68adb53
-```
-
-## Start the Development Server
-
-```bash
-npm run dev
-```
-
-Then open:
-
-```text
-http://localhost:3000
-```
 
 ---
 
@@ -529,70 +545,30 @@ The deployed frontend must connect to the Midnight Preprod contract documented a
 
 ---
 
-# Live Demo
-
-**PrivateOps is deployed and running.**
-
-The application connects to the PrivateOps Preprod contract, generates the zero-knowledge proof locally in the browser and submits the transaction through the connected wallet.
-
-| Environment | URL |
-|---|---|
-| Production | [privateops-liard.vercel.app](https://privateops-liard.vercel.app) |
-| Contract explorer data | Midnight Preprod indexer |
-
-```text
-https://privateops-liard.vercel.app
-```
-
-A Midnight-compatible wallet (1AM, Nocturne, NuFi, …) is required to run the authorization flow end to end.
-
----
-
 # Demo Video
 
-**PrivateOps in 2 minutes — problem, solution, live product tour, architecture and value.**
+**Pending recording**
 
-[![Watch the PrivateOps pitch](public/video/pitch-thumbnail.png)](https://privateops-liard.vercel.app/video/privateops-pitch-720p.mp4)
+The Level 2 demo will show:
 
-▶ **[Watch the pitch video](https://privateops-liard.vercel.app/video/privateops-pitch-720p.mp4)** (2 min 17 s · 1080p master: [1080p](https://privateops-liard.vercel.app/video/privateops-pitch-1080p.mp4) · repo copy: [720p](public/video/privateops-pitch-720p.mp4))
+1. Opening PrivateOps
+2. Connecting a Midnight-compatible wallet
+3. Showing the connected wallet address
+4. Entering an action amount
+5. Starting the authorization circuit
+6. Showing the proof-generation/loading state
+7. Showing:
 
-Voiced walkthrough of the real product, captured from the live Vercel deployment:
+   **Proved without revealing your input**
 
-| # | Chapter | What it shows |
-|---|---|---|
-| 01 | The problem space | Why every guardrail an agent is given today has to live somewhere public |
-| 02 | The problem | Proving permission currently reveals the rule, on a server or on-chain |
-| 03 | The solution | A zero-knowledge proof instead of a public policy |
-| 04 | How it works | `authorizeAction()` + the private `getPolicyLimit()` witness — one circuit, two public values |
-| 05 | Live product demo | Screen recording of the deployed app: wallet connect, action amount, local proof generation, transaction result |
-| 06 | Architecture | Next.js → Midnight.js → Compact contract on Preprod, with the witness never leaving the browser |
-| 07 | Differentiation | Traditional access control and public on-chain limits both force a choice PrivateOps removes |
-| 08 | Privacy model | Exactly what is public and exactly what stays private |
-| 09 | Why it matters | Compliance, treasury guardrails, delegated agents and machine-to-machine payments |
-| 10 | Try it | Live deployment, contract and repository |
-
-The video is reproducible from this repository: `scripts/video/` captures the screenshots and screen recording from the live deployment, renders the animated scenes, builds the cut and verifies it.
-
-```bash
-npm run video:install        # playwright, ffmpeg, sharp for the pipeline
-npm run video:capture        # screenshots + live app recording + scene renders
-npm run video:tts            # Gemini voice-over (needs GEMINI_API_KEY)
-npm run video:build          # cut to the narration, encode 1080p + 720p, publish to public/video
-npm run video:verify         # duration, voice-over, per-scene frames, live footage, README links
-npm run video:preview        # local player at http://localhost:4173
-```
-
-`npm run video:all` runs capture, TTS and build in one go. Without a Gemini key, `node scripts/video/tts-fallback.mjs` writes the same narration files with Google's public TTS endpoint, so the pipeline never ships a silent cut.
-
-**Poster**
-
-![PrivateOps pitch poster](public/video/poster.png)
+8. Showing the submitted transaction
+9. Demonstrating that the private input was never displayed
 
 ---
 
 # Level 2 Builder Challenge
 
-PrivateOps extends the Level 1 Midnight project with a frontend application and wallet-connected circuit interaction.
+PrivateOps extends the Level 1 Midnight project witha frontend application and wallet-connected circuit interaction.
 
 | Requirement | Status |
 |---|---|
@@ -611,7 +587,7 @@ PrivateOps extends the Level 1 Midnight project with a frontend application and 
 | Privacy Claim | Complete |
 | Contract address in README | Complete |
 | Live deployment | Complete |
-| Demo video | Complete |
+| Demo video | Pending |
 
 ---
 
@@ -639,9 +615,9 @@ The repository should contain only public configuration and the artifacts requir
 
 # Project Goal
 
-The goal of PrivateOps is to demonstrate a practical use case for Midnight's privacy-preserving architecture.
+The goal of PrivateOps is to demonstrate a practicaluse case for Midnight's privacy-preserving architecture.
 
-Instead of publicly revealing the information behind an authorization decision, PrivateOps demonstrates a model where an application can verify authorization while keeping the underlying private information protected.
+Instead of publicly revealing the information behindan authorization decision, PrivateOps demonstrates amodel where an application can verify authorization while keeping the underlying private information protected.
 
 The core concept is:
 
@@ -678,8 +654,8 @@ Midnight Network
 | ZK Proof Flow | Complete |
 | Preprod Contract | Deployed |
 | Production Build | Passing |
-| Live Deployment | Live |
-| Demo Video | Published |
+| Live Deployment | Pending |
+| Demo Video | Pending |
 
 ---
 
@@ -708,3 +684,18 @@ authorizeAction()
 # License
 
 This project was created as a Midnight Builder Challenge project and is provided for demonstration and educational purposes.
+## Production Build
+
+Verify the application with:
+
+```bash
+npm run build
+```
+
+The build should complete without TypeScript or compilation errors.
+
+Start the production application with:
+
+```bash
+npm run start
+```
