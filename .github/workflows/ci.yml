@@ -21,6 +21,11 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Setup Compact
+        uses: midnightntwrk/setup-compact-action@main
+        with:
+          compact-version: 0.5.2
+
       - name: Install dependencies
         run: npm install
 
