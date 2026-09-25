@@ -2,6 +2,13 @@
 
 ### Privacy-Preserving Authorization on Midnight
 
+[![Watch the 2-minute pitch](public/video/pitch-thumbnail.png)](https://privateops-liard.vercel.app/video/privateops-pitch-720p.mp4)
+
+[![Pitch video](https://img.shields.io/badge/%E2%96%B6_pitch_video-2_min-blue?style=flat-square)](https://privateops-liard.vercel.app/video/privateops-pitch-720p.mp4)
+[![Live demo](https://img.shields.io/badge/live_demo-privateops--liard.vercel.app-84cc16?style=flat-square)](https://privateops-liard.vercel.app)
+[![Network](https://img.shields.io/badge/network-Midnight_Preprod-22d3ee?style=flat-square)](https://midnight.network)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)](LICENSE)
+
 PrivateOps is a privacy-preserving authorization dApp built on the Midnight Network.
 
 It allows a user to prove that an action is authorized by a private policy without publicly revealing the private information behind that authorization.
@@ -524,35 +531,62 @@ The deployed frontend must connect to the Midnight Preprod contract documented a
 
 # Live Demo
 
-**Pending deployment**
+**PrivateOps is deployed and running.**
 
-The live deployment URL will be added after the frontend is deployed.
+The application connects to the PrivateOps Preprod contract, generates the zero-knowledge proof locally in the browser and submits the transaction through the connected wallet.
+
+| Environment | URL |
+|---|---|
+| Production | [privateops-liard.vercel.app](https://privateops-liard.vercel.app) |
+| Contract explorer data | Midnight Preprod indexer |
 
 ```text
-Live URL:
-To be added
+https://privateops-liard.vercel.app
 ```
+
+A Midnight-compatible wallet (1AM, Nocturne, NuFi, …) is required to run the authorization flow end to end.
 
 ---
 
 # Demo Video
 
-**Pending recording**
+**PrivateOps in 2 minutes — problem, solution, live product tour, architecture and value.**
 
-The Level 2 demo will show:
+[![Watch the PrivateOps pitch](public/video/pitch-thumbnail.png)](https://privateops-liard.vercel.app/video/privateops-pitch-720p.mp4)
 
-1. Opening PrivateOps
-2. Connecting a Midnight-compatible wallet
-3. Showing the connected wallet address
-4. Entering an action amount
-5. Starting the authorization circuit
-6. Showing the proof-generation/loading state
-7. Showing:
+▶ **[Watch the pitch video](https://privateops-liard.vercel.app/video/privateops-pitch-720p.mp4)** (2 min 17 s · 1080p master: [1080p](https://privateops-liard.vercel.app/video/privateops-pitch-1080p.mp4) · repo copy: [720p](public/video/privateops-pitch-720p.mp4))
 
-   **Proved without revealing your input**
+Voiced walkthrough of the real product, captured from the live Vercel deployment:
 
-8. Showing the submitted transaction
-9. Demonstrating that the private input was never displayed
+| # | Chapter | What it shows |
+|---|---|---|
+| 01 | The problem space | Why every guardrail an agent is given today has to live somewhere public |
+| 02 | The problem | Proving permission currently reveals the rule, on a server or on-chain |
+| 03 | The solution | A zero-knowledge proof instead of a public policy |
+| 04 | How it works | `authorizeAction()` + the private `getPolicyLimit()` witness — one circuit, two public values |
+| 05 | Live product demo | Screen recording of the deployed app: wallet connect, action amount, local proof generation, transaction result |
+| 06 | Architecture | Next.js → Midnight.js → Compact contract on Preprod, with the witness never leaving the browser |
+| 07 | Differentiation | Traditional access control and public on-chain limits both force a choice PrivateOps removes |
+| 08 | Privacy model | Exactly what is public and exactly what stays private |
+| 09 | Why it matters | Compliance, treasury guardrails, delegated agents and machine-to-machine payments |
+| 10 | Try it | Live deployment, contract and repository |
+
+The video is reproducible from this repository: `scripts/video/` captures the screenshots and screen recording from the live deployment, renders the animated scenes, builds the cut and verifies it.
+
+```bash
+npm run video:install        # playwright, ffmpeg, sharp for the pipeline
+npm run video:capture        # screenshots + live app recording + scene renders
+npm run video:tts            # Gemini voice-over (needs GEMINI_API_KEY)
+npm run video:build          # cut to the narration, encode 1080p + 720p, publish to public/video
+npm run video:verify         # duration, voice-over, per-scene frames, live footage, README links
+npm run video:preview        # local player at http://localhost:4173
+```
+
+`npm run video:all` runs capture, TTS and build in one go. Without a Gemini key, `node scripts/video/tts-fallback.mjs` writes the same narration files with Google's public TTS endpoint, so the pipeline never ships a silent cut.
+
+**Poster**
+
+![PrivateOps pitch poster](public/video/poster.png)
 
 ---
 
@@ -576,8 +610,8 @@ PrivateOps extends the Level 1 Midnight project with a frontend application and 
 | Private input hidden | Complete |
 | Privacy Claim | Complete |
 | Contract address in README | Complete |
-| Live deployment | Pending |
-| Demo video | Pending |
+| Live deployment | Complete |
+| Demo video | Complete |
 
 ---
 
@@ -644,8 +678,8 @@ Midnight Network
 | ZK Proof Flow | Complete |
 | Preprod Contract | Deployed |
 | Production Build | Passing |
-| Live Deployment | Pending |
-| Demo Video | Pending |
+| Live Deployment | Live |
+| Demo Video | Published |
 
 ---
 

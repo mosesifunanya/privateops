@@ -19,6 +19,13 @@
     "proof-server:start": "docker compose up -d",
     "proof-server:stop": "docker compose down",
     "clean": "node scripts/clean.mjs",
+    "video:install": "npm --prefix scripts/video install",
+    "video:capture": "node scripts/video/capture.mjs",
+    "video:tts": "node scripts/video/tts.mjs",
+    "video:build": "node scripts/video/build.mjs",
+    "video:verify": "node scripts/video/verify.mjs",
+    "video:preview": "node scripts/video/serve.mjs",
+    "video:all": "npm --prefix scripts/video run all",
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "tsx scripts/e2e-check.ts"
   },

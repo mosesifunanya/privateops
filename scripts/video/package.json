@@ -1,0 +1,20 @@
+{
+  "name": "privateops-pitch-video",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Reproducible pipeline that builds the PrivateOps product pitch video from the live deployment.",
+  "type": "module",
+  "scripts": {
+    "capture": "node capture.mjs",
+    "tts": "node tts.mjs",
+    "build": "node build.mjs",
+    "all": "node capture.mjs && node tts.mjs && node build.mjs"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.3.0",
+    "highlight.js": "^11.11.1",
+    "marked": "^15.0.0",
+    "playwright": "^1.63.0",
+    "sharp": "^0.34.0"
+  }
+}
