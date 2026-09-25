@@ -24,7 +24,7 @@ jobs:
       - name: Setup Compact
         uses: midnightntwrk/setup-compact-action@main
         with:
-          compact-version: 0.5.2
+          compact-version: 0.31.0
 
       - name: Install dependencies
         run: npm install
