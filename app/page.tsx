@@ -3,10 +3,13 @@
 import {
   ArrowRight,
   Check,
+  ChevronRight,
   CircleCheck,
   Github,
   Linkedin,
   Mail,
+  Menu,
+  X,
   LockKeyhole,
   Moon,
   ShieldCheck,
@@ -68,7 +71,7 @@ export default function Home() {
 
       <Privacy />
 
-      <Contact
+      <About
         shouldReduceMotion={shouldReduceMotion}
       />
 
@@ -97,6 +100,7 @@ function Header({
   midnight: MidnightWalletState;
 }) {
   const [hideOnScroll, setHideOnScroll] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
 
@@ -135,20 +139,55 @@ function Header({
     };
   }, []);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mobileMenuOpen]);
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   return (
-    <header
-      className={`site-header${
+    <>
+      <header
+        className={`site-header${
         hideOnScroll
           ? ' site-header--hidden-mobile'
           : ''
-      }`}
-      style={{
-        backgroundColor:
-          'var(--background)',
-      }}
-    >
+        }`}
+        style={{
+          backgroundColor: 'var(--background)',
+        }}
+      >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <motion.a
+        <div className="mobile-header-left">
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.94 }}
+            onClick={() => setMobileMenuOpen(true)}
+            className="mobile-menu-trigger"
+            aria-label="Open navigation menu"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="privateops-mobile-menu"
+          >
+            <Menu className="h-5 w-5" />
+          </motion.button>
+
+          <motion.a
           href="#"
           initial={{
             opacity: 0,
@@ -177,6 +216,7 @@ function Header({
             </span>
           </span>
         </motion.a>
+        </div>
 
         <nav className="hidden items-center gap-4 md:flex lg:gap-8">
           <NavLink href="#how-it-works">
@@ -191,8 +231,8 @@ function Header({
             Authorize
           </NavLink>
 
-          <NavLink href="#contact">
-            Contact Us
+          <NavLink href="#about">
+            About PrivateOps
           </NavLink>
         </nav>
 
@@ -269,35 +309,193 @@ function Header({
           Contact Us
         </NavLink>
       </nav>
-    </header>
+
+      </header>
+
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            <motion.button
+              type="button"
+              className="mobile-menu-backdrop"
+              aria-label="Close navigation menu"
+              onClick={closeMobileMenu}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+
+            <motion.aside
+              id="privateops-mobile-menu"
+              className="mobile-menu-drawer"
+              style={{
+                backgroundColor: isDark ? '#0a121f' : '#ffffff',
+                opacity: 1,
+                zIndex: 1100,
+              }}
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              aria-label="Mobile navigation"
+            >
+              <div className="mobile-menu-header">
+                <motion.a
+                  href="#"
+                  onClick={closeMobileMenu}
+                  className="mobile-menu-brand"
+                  aria-label="PrivateOps home"
+                >
+                  <span className="brand-icon">
+                    <ShieldCheck className="h-[17px] w-[17px]" />
+                  </span>
+
+                  <span>
+                    <span className="block text-sm font-bold tracking-tight">
+                      PrivateOps
+                    </span>
+
+                    <span className="block text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
+                      Privacy infrastructure
+                    </span>
+                  </span>
+                </motion.a>
+
+                <button
+                  type="button"
+                  onClick={closeMobileMenu}
+                  className="mobile-menu-close"
+                  aria-label="Close navigation menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <motion.nav
+                className="mobile-menu-links"
+                initial="closed"
+                animate="open"
+                variants={{
+                  open: {
+                    transition: {
+                      staggerChildren: 0.07,
+                      delayChildren: 0.08,
+                    },
+                  },
+                  closed: {},
+                }}
+              >
+                <NavLink href="#how-it-works" onClick={closeMobileMenu} mobile>
+                  How it works
+                </NavLink>
+                <NavLink href="#privacy" onClick={closeMobileMenu} mobile>
+                  Privacy
+                </NavLink>
+                <NavLink href="#authorize" onClick={closeMobileMenu} mobile>
+                  Authorize
+                </NavLink>
+                <NavLink href="#about" onClick={closeMobileMenu} mobile>
+                  About PrivateOps
+                </NavLink>
+              </motion.nav>
+
+              <div className="mobile-menu-info">
+                <div className="mobile-menu-status-group">
+                  <div className="mobile-menu-status-heading">
+                    <Zap className="mobile-menu-status-icon" aria-hidden="true" />
+                    <span>NETWORK</span>
+                  </div>
+
+                  <div className="mobile-menu-status-row">
+                    <span className="mobile-menu-status-dot" aria-hidden="true" />
+                    <div>
+                      <strong>Midnight Preprod</strong>
+                      <small>{midnight.isConnected ? 'Connected' : 'Connect wallet'}</small>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mobile-menu-privacy-card">
+                  <span className="mobile-menu-privacy-icon">
+                    <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <strong>Privacy protected</strong>
+                    <span>Your private policy remains hidden.</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <div className="mobile-menu-footer">
+                <div className="mobile-menu-footer-copy">
+                  <span>PRIVATE AUTHORIZATION</span>
+                  <span>ON MIDNIGHT</span>
+                </div>
+
+                <motion.button
+                  type="button"
+                  onClick={toggleTheme}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="mobile-menu-theme"
+                  aria-label={
+                    isDark
+                      ? 'Switch to light mode'
+                      : 'Switch to dark mode'
+                  }
+                >
+                  {isDark ? (
+                    <Sun className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Moon className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  <span>{isDark ? 'Light mode' : 'Dark mode'}</span>
+                </motion.button>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
 function NavLink({
   href,
   children,
+  onClick,
+  mobile = false,
 }: {
   href: string;
   children: React.ReactNode;
+  onClick?: () => void;
+  mobile?: boolean;
 }) {
   return (
     <motion.a
       href={href}
-      whileHover={{
-        y: -2,
-      }}
+      onClick={onClick}
+      initial={mobile ? { opacity: 0, x: -14 } : undefined}
+      animate={mobile ? { opacity: 1, x: 0 } : undefined}
+      whileHover={mobile ? { x: 8 } : { y: -2 }}
       whileTap={{
-        scale: 0.96,
+        scale: mobile ? 0.985 : 0.96,
       }}
       transition={{
         duration: 0.18,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className="group whitespace-nowrap rounded-full px-3 py-2 text-sm font-semibold text-[var(--muted)] transition-all duration-200 hover:bg-[#84cc16] hover:text-white hover:shadow-[0_8px_22px_rgba(132,204,22,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#84cc16] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]"
+      className={mobile
+        ? 'mobile-menu-item group'
+        : 'group whitespace-nowrap rounded-full px-3 py-2 text-sm font-semibold text-[var(--muted)] transition-all duration-200 hover:bg-[#84cc16] hover:text-white hover:shadow-[0_8px_22px_rgba(132,204,22,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#84cc16] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]'}
     >
       <span className="relative z-10">
         {children}
       </span>
+      {mobile && (
+        <ChevronRight className="mobile-menu-item-arrow" aria-hidden="true" />
+      )}
     </motion.a>
   );
 }
@@ -310,7 +508,8 @@ function Hero({
   return (
     <section className="relative">
       <div className="mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 sm:pb-28 sm:pt-28 lg:px-8 lg:pb-32 lg:pt-28">
-        <div className="max-w-4xl">
+        <div className="hero-motion-grid">
+          <div className="max-w-4xl">
           <motion.div
             initial={{
               opacity: 0,
@@ -421,6 +620,27 @@ function Hero({
               Explore privacy
             </motion.a>
           </motion.div>
+          </div>
+
+          <div className="hero-proof-visual" aria-hidden="true">
+            <div className="hero-proof-orbit hero-proof-orbit-one" />
+            <div className="hero-proof-orbit hero-proof-orbit-two" />
+            <div className="hero-proof-core">
+              <ShieldCheck className="h-9 w-9" />
+              <span>PRIVATE</span>
+              <strong>PROOF</strong>
+            </div>
+            <span className="hero-proof-node node-one" />
+            <span className="hero-proof-node node-two" />
+            <span className="hero-proof-node node-three" />
+            <span className="hero-proof-particle particle-one" />
+            <span className="hero-proof-particle particle-two" />
+            <span className="hero-proof-particle particle-three" />
+            <div className="hero-proof-label">
+              <span className="status-dot" />
+              ZK authorization
+            </div>
+          </div>
         </div>
 
         <motion.div
@@ -1213,17 +1433,17 @@ function PrivacyRow({
   );
 }
 
-function Contact({
+function About({
   shouldReduceMotion,
 }: {
   shouldReduceMotion: boolean | null;
 }) {
   return (
     <section
-      id="contact"
+      id="about"
       className="section-divider scroll-mt-24"
     >
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+      <div className="about-section-container mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         <motion.div
           initial={{
             opacity: 0,
@@ -1240,93 +1460,167 @@ function Contact({
           transition={{
             duration: 0.6,
           }}
-          className="contact-shell"
+          className="about-shell"
         >
-          <div className="grid items-center gap-12 lg:grid-cols-[1fr_320px] lg:gap-20">
-            <div>
-              <div className="eyebrow">
-                About the builder
+          <div className="about-grid">
+            <motion.div
+              initial={{
+                opacity: 0,
+                x: shouldReduceMotion ? 0 : -15,
+              }}
+              whileInView={{
+                opacity: 1,
+                x: 0,
+              }}
+              viewport={{ once: true, amount: 0.25 }}
+              transition={{ duration: 0.55 }}
+              className="about-panel about-product-panel"
+            >
+              <div className="about-panel-top">
+                <div className="about-icon">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <span className="network-badge">PRIVATEOPS</span>
               </div>
 
-              <h2 className="section-title mt-3">
-                Hi, I&apos;m Moses.
-              </h2>
+              <div className="eyebrow">About PrivateOps</div>
 
-              <p className="section-copy mt-3 max-w-xl">
-                I&apos;m a blockchain and full stack developer
-                focused on building practical applications
-                across Web3, smart contracts, and modern web
-                technologies.
+              <p className="section-copy mt-4">
+                PrivateOps is a privacy-preserving authorization platform
+                designed to help people and organizations verify that an
+                action is allowed without exposing the private rule behind
+                that decision.
               </p>
 
-              <p className="section-copy mt-3 max-w-xl">
-                PrivateOps is one of my projects exploring
-                privacy-preserving authorization with
-                zero-knowledge proofs on Midnight.
+              <p className="section-copy mt-4">
+                Imagine an organization has a private spending limit.
+                Instead of revealing that limit to everyone, PrivateOps
+                can use a zero-knowledge proof to verify that a requested
+                action follows the rule. The public only needs to see
+                whether the action was authorized, while the sensitive
+                policy remains private.
               </p>
-            </div>
 
-            <div className="flex flex-col items-center justify-center">
-              <div className="group relative">
-                <div className="absolute -inset-3 rounded-full bg-[#84cc16]/0 blur-2xl transition-all duration-300 group-hover:bg-[#84cc16]/20" />
+              <p className="section-copy mt-4">
+                Built on Midnight, PrivateOps explores how privacy and
+                verifiability can work together for use cases such as
+                eligibility checks, private allowlists, confidential
+                credentials, and other situations where someone needs to
+                prove they qualify without unnecessarily revealing
+                sensitive information.
+              </p>
 
-                <img
-                  src="/moses.jpeg"
-                  alt="Moses Ifunanya Nobei"
-                  className="relative h-36 w-36 rounded-full border border-[var(--border)] bg-[var(--surface)] object-cover shadow-[0_16px_40px_var(--shadow)] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-[1.03] group-hover:border-[#84cc16] group-hover:shadow-[0_18px_45px_rgba(132,204,22,0.24)] sm:h-40 sm:w-40"
-                />
+              <div className="about-points">
+                <div className="about-point">
+                  <CircleCheck className="h-4 w-4" />
+                  <span>Private rules stay private.</span>
+                </div>
+                <div className="about-point">
+                  <CircleCheck className="h-4 w-4" />
+                  <span>Proofs make the decision verifiable.</span>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{
+                opacity: 0,
+                x: shouldReduceMotion ? 0 : 15,
+              }}
+              whileInView={{
+                opacity: 1,
+                x: 0,
+              }}
+              viewport={{ once: true, amount: 0.25 }}
+              transition={{ duration: 0.55, delay: 0.05 }}
+              className="about-panel about-builder-panel"
+            >
+              <div className="eyebrow">About the Builder</div>
+
+              <div className="about-builder-head">
+                <div className="about-builder-photo-wrap">
+                  <div className="about-builder-glow" />
+                  <img
+                    src="/moses.jpeg"
+                    alt="Moses Ifunanya Nobei"
+                    className="about-builder-photo"
+                  />
+                </div>
+
+                <div className="about-builder-identity">
+                  <h3>Moses Ifunanya Nobei</h3>
+                  <p>Blockchain &amp; Full Stack Developer</p>
+                </div>
               </div>
 
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <a
-                  href="https://www.linkedin.com/in/mosesifunanya/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="icon-button"
-                  aria-label="LinkedIn"
-                  title="LinkedIn"
-                >
-                  <Linkedin className="h-5 w-5" />
-                </a>
+              <p className="section-copy mt-6">
+                I&apos;m a blockchain and full stack developer interested in
+                building practical applications that combine blockchain
+                technology, smart contracts, privacy, and modern web
+                development.
+              </p>
 
-                <a
-                  href="https://x.com/Ifynob53"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="icon-button"
-                  aria-label="X / Twitter"
-                  title="X / Twitter"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className="h-5 w-5 fill-current"
+              <p className="section-copy mt-4">
+                PrivateOps is my exploration of privacy-preserving
+                authorization on Midnight, using zero-knowledge proofs to
+                demonstrate how a system can verify a decision without
+                exposing the sensitive information behind it.
+              </p>
+
+              <div className="about-builder-footer">
+                <span className="mono-label">CONNECT</span>
+
+                <div className="about-socials">
+                  <a
+                    href="https://www.linkedin.com/in/mosesifunanya/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="icon-button"
+                    aria-label="LinkedIn"
+                    title="LinkedIn"
                   >
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.657l-5.214-6.817-5.964 6.817H1.684l7.73-8.835L1.258 2.25H8.084l4.713 6.231L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
-                  </svg>
-                </a>
+                    <Linkedin className="h-5 w-5" />
+                  </a>
 
-                <a
-                  href="https://github.com/mosesifunanya"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="icon-button"
-                  aria-label="GitHub"
-                  title="GitHub"
-                >
-                  <Github className="h-5 w-5" />
-                </a>
+                  <a
+                    href="https://x.com/Ifynob53"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="icon-button"
+                    aria-label="X / Twitter"
+                    title="X / Twitter"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      className="h-5 w-5 fill-current"
+                    >
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.657l-5.214-6.817-5.964 6.817H1.684l7.73-8.835L1.258 2.25H8.084l4.713 6.231L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
+                    </svg>
+                  </a>
 
-                <a
-                  href="mailto:mosesifunanya@gmail.com"
-                  className="icon-button"
-                  aria-label="Email"
-                  title="Email"
-                >
-                  <Mail className="h-5 w-5" />
-                </a>
+                  <a
+                    href="https://github.com/mosesifunanya"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="icon-button"
+                    aria-label="GitHub"
+                    title="GitHub"
+                  >
+                    <Github className="h-5 w-5" />
+                  </a>
+
+                  <a
+                    href="mailto:mosesifunanya@gmail.com"
+                    className="icon-button"
+                    aria-label="Email"
+                    title="Email"
+                  >
+                    <Mail className="h-5 w-5" />
+                  </a>
+                </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
       </div>
