@@ -189,16 +189,24 @@ function checkScenes(file) {
   });
 }
 
+/** File names that look like domains but are not, e.g. `WalletConnect.tsx`. */
+const FILE_EXT = /(?:^|\.)(?:tsx?|jsx?|mjs|cjs|json|md|css|scss|html|png|jpe?g|svg|mp4|webm|wav|compact|yml|yaml|toml|env|lock|mts|mjs|d\.ts)$/i;
+
+/** Local URLs are documented in the README but cannot be fetched from here. */
+const isLocal = (url) => /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)([:/]|$)/.test(url);
+
 async function checkLinks() {
   const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
   const urls = new Set(
     [...readme.matchAll(/https?:\/\/[^\s)"'<>]+/g)]
       .map((m) => m[0].replace(/[.,)]+$/, ''))
-      .filter((u) => !u.includes('<') && !u.includes('YOUR_')),
+      .filter((u) => !u.includes('<') && !u.includes('YOUR_') && !isLocal(u)),
   );
-  // Bare domains written as inline code also count as links for our purposes.
-  for (const m of readme.matchAll(/`([a-z0-9-]+\.[a-z]{2,}[^\s`]*)`/gi)) {
-    if (!m[1].includes('<')) urls.add(`https://${m[1]}`);
+  // Bare lowercase domains written as inline code also count as links.
+  for (const m of readme.matchAll(/`([a-z0-9-]+(?:\.[a-z0-9-]+)+[^\s`]*)`/g)) {
+    const host = m[1].split('/')[0];
+    if (m[1].includes('<') || FILE_EXT.test(host) || host.startsWith('localhost')) continue;
+    urls.add(`https://${m[1]}`);
   }
 
   console.log(`\n[verify] checking ${urls.size} README links`);
@@ -206,9 +214,10 @@ async function checkLinks() {
     try {
       const res = await fetch(url, { method: 'GET', redirect: 'follow' });
       if (res.ok) pass(`${res.status} ${url}`);
+      // 403/429 are rate limits and bot walls, not broken links.
+      else if (res.status === 403 || res.status === 429) pass(`${res.status} ${url} (rate limited — not counted)`);
       else fail(`${res.status} ${url}`);
     } catch (err) {
-      // GitHub returns 429/403 to unauthenticated bursts; treat as unknown, not broken.
       fail(`unreachable ${url} (${err.message.slice(0, 60)})`);
     }
   }
